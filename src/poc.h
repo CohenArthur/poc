@@ -42,12 +42,7 @@ struct poc_tuple {
   struct poc_destructable_ptr snd;
 };
 
-void poc_tuple_destruct(void *t_void) {
-  struct poc_tuple *t = t_void;
-
-  poc_destruct(&t->fst);
-  poc_destruct(&t->snd);
-}
+void poc_tuple_destruct(void *t_void);
 
 struct poc_result poc_ok(struct poc_destructable_ptr parsed,
                          struct poc_slice remaining);

@@ -25,6 +25,15 @@ void poc_destruct(struct poc_destructable_ptr *ptr) {
     ptr->free_fn(ptr->ptr);
 }
 
+void poc_tuple_destruct(void *t_void) {
+  struct poc_tuple *t = t_void;
+
+  poc_destruct(&t->fst);
+  poc_destruct(&t->snd);
+
+  free(t_void);
+}
+
 static const char *slice_at(const struct poc_slice *slice, size_t idx) {
   if (!slice->ptr || idx >= slice->len)
     return NULL;
