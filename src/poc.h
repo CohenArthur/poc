@@ -56,18 +56,16 @@ struct poc_result poc_err(enum error_reason reason);
 bool poc_is_ok(struct poc_result *result);
 bool poc_is_err(struct poc_result *result);
 
-struct poc_parser_interface;
-
-typedef struct poc_result (*poc_parse_fn)(
-    const struct poc_parser_interface *self_interface,
-    const struct poc_slice *input);
-
 struct poc_parser_interface {
-  poc_parse_fn parser;
+  struct poc_result (*parser)(const struct poc_parser_interface *self_interface,
+                              const struct poc_slice *input);
+  void (*destructor)(struct poc_parser_interface *self_interface);
 };
 
 struct poc_result poc_parse(struct poc_parser_interface *parser,
                             const struct poc_slice *input);
+
+void poc_parser_free(struct poc_parser_interface *parser);
 
 struct poc_parser_interface *poc_and_then(struct poc_parser_interface *first,
                                           struct poc_parser_interface *second);

@@ -75,7 +75,9 @@ struct poc_parser_interface *poc_char(char character) {
     return NULL;
 
   parser->character = character;
-  parser->interface = (struct poc_parser_interface){poc_char_parser};
+  parser->interface = (struct poc_parser_interface){
+      .parser = poc_char_parser,
+  };
 
   return &parser->interface;
 }
@@ -109,7 +111,9 @@ struct poc_parser_interface *poc_str(struct poc_slice str) {
     return NULL;
 
   parser->str = str;
-  parser->interface = (struct poc_parser_interface){poc_str_parser};
+  parser->interface = (struct poc_parser_interface){
+      .parser = poc_str_parser,
+  };
 
   return &parser->interface;
 }
@@ -141,13 +145,23 @@ poc_and_then_parser(const struct poc_parser_interface *self_void,
                 second.data.ok.remaining);
 }
 
+static void poc_and_then_destroy(struct poc_parser_interface *self_void) {
+  const struct poc_and_then *self = (const struct poc_and_then *)self_void;
+
+  poc_parser_free(self->first);
+  poc_parser_free(self->second);
+
+  free(self_void);
+}
+
 struct poc_parser_interface *poc_and_then(struct poc_parser_interface *first,
                                           struct poc_parser_interface *second) {
   struct poc_and_then *parser = malloc(sizeof(*parser));
 
   parser->first = first;
   parser->second = second;
-  parser->interface = (struct poc_parser_interface){poc_and_then_parser};
+  parser->interface = (struct poc_parser_interface){
+      .parser = poc_and_then_parser, .destructor = poc_and_then_destroy};
 
   return &parser->interface;
 }
@@ -155,6 +169,13 @@ struct poc_parser_interface *poc_and_then(struct poc_parser_interface *first,
 struct poc_result poc_parse(struct poc_parser_interface *parser,
                             const struct poc_slice *input) {
   return parser->parser(parser, input);
+}
+
+void poc_parser_free(struct poc_parser_interface *parser) {
+  if (!parser->destructor)
+    free(parser);
+  else
+    parser->destructor(parser);
 }
 
 struct poc_result poc_ok(struct poc_destructable_ptr parsed,
